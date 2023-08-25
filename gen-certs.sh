@@ -1,10 +1,12 @@
 #!/bin/bash
 SCRIPT_PATH=$(dirname "$(realpath $0)")
 certsNum=$1
-echo "当前脚本路径: $SCRIPT_PATH"
-echo "构建：$certsNum 组证书"
+echo "current path: $SCRIPT_PATH"
+echo "build：$certsNum groups of certification files"
 
 #cd /root
+mkdir certs
+cd certs
 openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 -keyout RootCA.key -out RootCA.pem -subj "/C=US/CN=DirectCommunication-Root-CA"
 
 openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
@@ -13,7 +15,7 @@ openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
 for ((i=1; i<=certsNum; i++))
 do
   folder_name="cert_$i"
-  echo "构建第$i 组证书到$SCRIPT_PATH/$folder_name"
+  echo "building$i th certification group to $SCRIPT_PATH/$folder_name"
   domain_file_name="domains_$i.txt"
   mkdir $folder_name
   cd $folder_name
