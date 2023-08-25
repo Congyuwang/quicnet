@@ -51,9 +51,9 @@ openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
 for ((i=0; i<length; i++))
 do
   argnName=${certsArgs[i]}
-  folder_name="cert_$i"
-  echo "building$i th certification group to $SCRIPT_PATH/$folder_name for domain name: $argnName"
-  domain_file_name="domains_$argnName.txt"
+  folder_name="cert_$argnName"
+  echo "building$i th certification group to $SCRIPT_PATH/certs/$folder_name for domain name: $argnName"
+  domain_file_name="domains.txt"
   mkdir $folder_name
   cd $folder_name
   echo "authorityKeyIdentifier=keyid,issuer" > $domain_file_name
@@ -62,11 +62,9 @@ do
   echo "subjectAltName = @alt_names" >> $domain_file_name
   echo "[alt_names]" >> $domain_file_name
   echo "DNS.1 = $argnName" >> $domain_file_name
-  cp ../RootCA.key RootCA.key
-  cp ../RootCA.pem RootCA.pem
-  cp ../RootCA.crt RootCA.crt
-  openssl req -new -nodes -newkey rsa:2048 -keyout localhost.key -out localhost.csr -subj "/C=US/ST=Beijing/L=Haidian/O=DirectCommunication-Certificates/CN=localhost.local"
-  openssl x509 -req -sha256 -days 1024 -in localhost.csr -CA RootCA.pem -CAkey RootCA.key -CAcreateserial -extfile $domain_file_name -out localhost.crt
+
+  openssl req -new -nodes -newkey rsa:2048 -keyout $argnName.key -out $argnName.csr -subj "/C=US/ST=Beijing/L=Haidian/O=DirectCommunication-Certificates/CN=localhost.local"
+  openssl x509 -req -sha256 -days 1024 -in $argnName.csr -CA ../RootCA.pem -CAkey ../RootCA.key -CAcreateserial -extfile $domain_file_name -out $argnName.crt
   cd ..
 done
 
