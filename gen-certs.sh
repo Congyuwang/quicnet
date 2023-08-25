@@ -1,22 +1,59 @@
 #!/bin/bash
 SCRIPT_PATH=$(dirname "$(realpath $0)")
-certsNum=$1
+certsArgs=("$@")
+length=${#certsArgs[@]}
 echo "current path: $SCRIPT_PATH"
-echo "build：$certsNum groups of certification files"
+echo "build：$length groups of certification files"
 
-#cd /root
+check_duplicates() {
+    local list=("$@")
+
+    # Creates an associative array to store the values in the list
+    declare -A map
+    for item in "${list[@]}"; do
+        if [[ -n ${map[$item]} ]]; then
+            echo "duplicate domain name: $item"
+            exit 1
+        fi
+        map[$item]=""
+    done
+
+    echo "no duplicate domain name"
+}
+
+check_domain() {
+    # regex matching string
+    regex="^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$"
+
+    # check if arg name fits the regex expression
+    if [[ $1 =~ $regex ]]; then
+        echo "Domain name $1 is valid."
+    else
+        echo "Domain name $1 is invalid. Please rename it."
+        exit 1
+    fi
+}
+
+check_duplicates "${certsArgs[@]}"
+
+for arg in "${certsArgs[@]}"
+do
+  check_domain $arg
+done
+
 mkdir certs
 cd certs
 openssl req -x509 -nodes -new -sha256 -days 1024 -newkey rsa:2048 -keyout RootCA.key -out RootCA.pem -subj "/C=US/CN=DirectCommunication-Root-CA"
 
 openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
 
-# 使用循环创建文件夹并在其中生成文件
-for ((i=1; i<=certsNum; i++))
+# Use loops to create folders and generate files in them
+for ((i=0; i<length; i++))
 do
+  argnName=${certsArgs[i]}
   folder_name="cert_$i"
-  echo "building$i th certification group to $SCRIPT_PATH/$folder_name"
-  domain_file_name="domains_$i.txt"
+  echo "building$i th certification group to $SCRIPT_PATH/$folder_name for domain name: $argnName"
+  domain_file_name="domains_$argnName.txt"
   mkdir $folder_name
   cd $folder_name
   echo "authorityKeyIdentifier=keyid,issuer" > $domain_file_name
@@ -24,7 +61,7 @@ do
   echo "keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment" >> $domain_file_name
   echo "subjectAltName = @alt_names" >> $domain_file_name
   echo "[alt_names]" >> $domain_file_name
-  echo "DNS.1 = direct-node-$i" >> $domain_file_name
+  echo "DNS.1 = $argnName" >> $domain_file_name
   cp ../RootCA.key RootCA.key
   cp ../RootCA.pem RootCA.pem
   cp ../RootCA.crt RootCA.crt
