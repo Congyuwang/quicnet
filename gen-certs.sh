@@ -57,11 +57,7 @@ do
   mkdir $folder_name
   cd $folder_name
   echo "authorityKeyIdentifier=keyid,issuer" > $domain_file_name
-  echo "basicConstraints=CA:FALSE" >> $domain_file_name
-  echo "keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment" >> $domain_file_name
-  echo "subjectAltName = @alt_names" >> $domain_file_name
-  echo "[alt_names]" >> $domain_file_name
-  echo "DNS.1 = $argnName" >> $domain_file_name
+  echo -e "basicConstraints=CA:FALSE\nkeyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\nsubjectAltName = @alt_names\n[alt_names]\nDNS.1 = $argnName\n" >> $domain_file_name
 
   openssl req -new -nodes -newkey rsa:2048 -keyout $argnName.key -out $argnName.csr -subj "/C=US/ST=Beijing/L=Haidian/O=DirectCommunication-Certificates/CN=localhost.local"
   openssl x509 -req -sha256 -days 1024 -in $argnName.csr -CA ../RootCA.pem -CAkey ../RootCA.key -CAcreateserial -extfile $domain_file_name -out $argnName.crt
