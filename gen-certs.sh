@@ -51,7 +51,7 @@ openssl x509 -outform pem -in RootCA.pem -out RootCA.crt
 for ((i=0; i<length; i++))
 do
   argnName=${certsArgs[i]}
-  folder_name="cert_$argnName"
+  folder_name="$argnName"
   echo "building$i th certification group to $SCRIPT_PATH/certs/$folder_name for domain name: $argnName"
   domain_file_name="domains.txt"
   mkdir $folder_name
@@ -67,4 +67,3 @@ do
   openssl x509 -req -sha256 -days 1024 -in $argnName.csr -CA ../RootCA.pem -CAkey ../RootCA.key -CAcreateserial -extfile $domain_file_name -out $argnName.crt
   cd ..
 done
-

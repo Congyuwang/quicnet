@@ -1,3 +1,5 @@
+mod tls;
+
 use serde::Deserialize;
 use std::net::IpAddr;
 
