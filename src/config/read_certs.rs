@@ -1,8 +1,8 @@
+use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::{Certificate, PrivateKey, RootCertStore, ServerConfig};
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
-use rustls::server::AllowAnyAuthenticatedClient;
 
 pub fn load_certificates_from_pem(path: &str) -> Vec<rustls::Certificate> {
     let file = File::open(path).expect("Failed to open certificate file");
@@ -70,9 +70,9 @@ mod tests {
     #[test]
     fn test_read_file() {
         let file = build_server_config(
-            r"D:\Work\ProgrammingSpace\quicnet\certs\RootCA.pem",
-            r"D:\Work\ProgrammingSpace\quicnet\certs\cert_ddpwuxrmp.uk\ddpwuxrmp.uk.crt",
-            r"D:\Work\ProgrammingSpace\quicnet\certs\cert_ddpwuxrmp.uk\ddpwuxrmp.uk.key",
+            r"certs\RootCA.pem",
+            r"certs\cert_ddpwuxrmp.uk\ddpwuxrmp.uk.crt",
+            r"certs\cert_ddpwuxrmp.uk\ddpwuxrmp.uk.key",
         );
     }
 }
