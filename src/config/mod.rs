@@ -1,3 +1,5 @@
+mod read_certs;
+
 use serde::Deserialize;
 use std::net::IpAddr;
 
