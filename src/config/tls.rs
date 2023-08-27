@@ -60,21 +60,27 @@ pub fn build_server_config(
 mod tls_tests {
     use super::*;
 
-    const CERTS_DIR: &str = "certs";
     const CA_PATH: &str = "./certs/RootCA.pem";
+    const BAD_CRT: &str = "./certs/bad/bad.crt";
+    const BAD_KEY: &str = "./certs/bad/bad.key";
     const TEST_CRT: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.crt";
     const TEST_KEY: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.key";
 
     #[test]
     fn test_server_config() {
-        std::process::Command::new("/bin/sh")
-            .args(&["./gen-certs.sh", "ddpwuxrmp.uk"])
-            .output()
-            .expect("failed to create certs");
         let ca = load_certificates(CA_PATH).expect("failed to load ca");
         let certs = load_certificates(TEST_CRT).expect("failed to load certs");
         let key = load_private_key(TEST_KEY).expect("failed to key");
         build_server_config(ca, certs, key).expect("failed to build server config");
-        let _ = std::fs::remove_dir_all(CERTS_DIR);
+    }
+
+    #[test]
+    fn test_bad_cert() {
+        assert!(load_certificates(BAD_CRT).is_err())
+    }
+
+    #[test]
+    fn test_bad_key() {
+        assert!(load_certificates(BAD_KEY).is_err())
     }
 }
