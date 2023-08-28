@@ -1,10 +1,12 @@
 use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::{RootCertStore, ServerConfig};
+use rustls_pemfile::Item::{ECKey, PKCS8Key, RSAKey};
 use std::fs::File;
 use std::io::{BufReader, ErrorKind};
 use std::path::Path;
 use std::sync::Arc;
 
+/// Load certificates.
 pub fn load_certificates<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<rustls::Certificate>> {
     let mut reader = BufReader::new(File::open(path)?);
     Ok(rustls_pemfile::certs(&mut reader)?
@@ -13,26 +15,25 @@ pub fn load_certificates<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<rustls:
         .collect())
 }
 
+/// Load private key from file.
+///
+/// This function also supports concatenated private key format
+/// (i.e. the private key is appended to the certificate file).
 pub fn load_private_key<P: AsRef<Path>>(path: P) -> std::io::Result<rustls::PrivateKey> {
     let mut reader = BufReader::new(File::open(&path)?);
-    let key = match rustls_pemfile::read_one(&mut reader)?.ok_or(std::io::Error::new(
-        std::io::ErrorKind::Other,
-        format!("no private key found in file: {}", path.as_ref().display()),
-    ))? {
-        rustls_pemfile::Item::RSAKey(key) => key,
-        rustls_pemfile::Item::PKCS8Key(key) => key,
-        rustls_pemfile::Item::ECKey(key) => key,
-        _ => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!(
-                    "invalid private key format (requires RSA, EC, or PKCS): {}",
-                    path.as_ref().display()
-                ),
-            ))
+    loop {
+        // if read_one returns `None`, no suitable private key is found
+        let item = rustls_pemfile::read_one(&mut reader)?.ok_or(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "no private key found in file (requires RSA, EC, or PKCS): {}",
+                path.as_ref().display()
+            ),
+        ))?;
+        if let RSAKey(key) | PKCS8Key(key) | ECKey(key) = item {
+            break Ok(rustls::PrivateKey(key));
         }
-    };
-    Ok(rustls::PrivateKey(key))
+    }
 }
 
 pub fn build_server_config(
@@ -65,6 +66,7 @@ mod tls_tests {
     const BAD_KEY: &str = "./certs/bad/bad.key";
     const TEST_CRT: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.crt";
     const TEST_KEY: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.key";
+    const CONCAT_CRT_KEY: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.pem";
 
     #[test]
     fn test_server_config() {
@@ -76,11 +78,20 @@ mod tls_tests {
 
     #[test]
     fn test_bad_cert() {
-        assert!(load_certificates(BAD_CRT).is_err())
+        if let Ok(v) = load_certificates(BAD_CRT) {
+            assert!(v.is_empty())
+        } else {
+            panic!("load_certificates should be OK reading empty file")
+        }
     }
 
     #[test]
     fn test_bad_key() {
-        assert!(load_certificates(BAD_KEY).is_err())
+        assert!(load_private_key(BAD_KEY).is_err())
+    }
+
+    #[test]
+    fn test_concat() {
+        assert!(load_private_key(CONCAT_CRT_KEY).is_ok())
     }
 }
