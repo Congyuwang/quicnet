@@ -62,8 +62,8 @@ mod tls_tests {
     use super::*;
 
     const CA_PATH: &str = "./certs/RootCA.pem";
-    const BAD_CRT: &str = "./certs/bad/bad.crt";
-    const BAD_KEY: &str = "./certs/bad/bad.key";
+    const EMPTY_CRT: &str = "./certs/empty/empty.crt";
+    const EMPTY_KEY: &str = "./certs/empty/empty.key";
     const TEST_CRT: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.crt";
     const TEST_KEY: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.key";
     const CONCAT_CRT_KEY: &str = "./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.pem";
@@ -77,8 +77,8 @@ mod tls_tests {
     }
 
     #[test]
-    fn test_bad_cert() {
-        if let Ok(v) = load_certificates(BAD_CRT) {
+    fn test_empty_cert() {
+        if let Ok(v) = load_certificates(EMPTY_CRT) {
             assert!(v.is_empty())
         } else {
             panic!("load_certificates should be OK reading empty file")
@@ -86,8 +86,8 @@ mod tls_tests {
     }
 
     #[test]
-    fn test_bad_key() {
-        assert!(load_private_key(BAD_KEY).is_err())
+    fn test_empty_key() {
+        assert!(load_private_key(EMPTY_KEY).is_err())
     }
 
     #[test]
