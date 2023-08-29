@@ -1,6 +1,6 @@
 use rustls::{
     server::{ClientCertVerified, ClientCertVerifier},
-    CertRevocationListError, Certificate, CertificateError, DistinguishedName, RootCertStore,
+    Certificate, CertificateError, DistinguishedName,
 };
 use std::{sync::Arc, time::SystemTime};
 use webpki::{DnsName, TlsClientTrustAnchors, TrustAnchor};
@@ -66,7 +66,7 @@ impl ClientCertVerifier for AllowWhitelistAuthenticatedClient {
         intermediates: &[Certificate],
         now: SystemTime,
     ) -> Result<ClientCertVerified, rustls::Error> {
-        let cert = webpki::EndEntityCert::try_from(end_entity.0.as_ref())?;
+        let cert = webpki::EndEntityCert::try_from(end_entity.0.as_ref()).map_err(pki_error)?;
         let chain = intermediate_chain(intermediates);
         let trust_roots = trust_roots(&self.roots)?;
         let now = webpki::Time::try_from(now).map_err(|_| rustls::Error::FailedToGetCurrentTime)?;
@@ -108,14 +108,10 @@ fn pki_error(error: webpki::Error) -> rustls::Error {
         CertExpired | InvalidCertValidity => CertificateError::Expired.into(),
         UnknownIssuer => CertificateError::UnknownIssuer.into(),
         CertNotValidForName => CertificateError::NotValidForName.into(),
-        CertRevoked => CertificateError::Revoked.into(),
-        IssuerNotCrlSigner => CertRevocationListError::IssuerInvalidForCrl.into(),
 
         InvalidSignatureForPublicKey
         | UnsupportedSignatureAlgorithm
         | UnsupportedSignatureAlgorithmForPublicKey => CertificateError::BadSignature.into(),
-
-        InvalidCrlSignatureForPublicKey => CertRevocationListError::BadSignature.into(),
 
         _ => CertificateError::Other(Arc::new(error)).into(),
     }
