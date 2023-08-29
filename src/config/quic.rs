@@ -18,7 +18,6 @@ pub fn default_config(
     let transport_config = default_transport_config();
     let mut server_config = quinn::ServerConfig::with_crypto(Arc::new(server_crypto));
     let mut client_config = quinn::ClientConfig::new(Arc::new(client_crypto));
-    server_config.use_retry(true);
     server_config.transport_config(transport_config.clone());
     client_config.transport_config(transport_config);
     Ok((server_config, client_config))
