@@ -63,6 +63,28 @@ pub fn build_crypto(
     Ok((server_config, client_config))
 }
 
+/// Match domain names of provided certs.
+pub fn match_certs_domain<'a>(
+    certs: &[rustls::Certificate],
+    domains: &'a [webpki::DnsName],
+) -> std::io::Result<Vec<webpki::DnsNameRef<'a>>> {
+    let mut result = Vec::new();
+    for cert in certs {
+        let cert = webpki::EndEntityCert::try_from(cert.0.as_slice()).map_err(|e| {
+            std::io::Error::new(
+                ErrorKind::Other,
+                format!("failed to parse certificate: {e}"),
+            )
+        })?;
+        if let Ok(matched) =
+            cert.verify_is_valid_for_at_least_one_dns_name(domains.iter().map(|c| c.as_ref()))
+        {
+            result.extend(matched)
+        }
+    }
+    Ok(result)
+}
+
 /// config for server
 fn build_server_config(
     ca: Vec<rustls::Certificate>,
