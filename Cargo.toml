@@ -8,13 +8,15 @@ edition = "2021"
 crate-type = ["staticlib"]
 
 [dependencies]
+config = "0.13.3"
 
 dashmap = { version = "5.4.0", features = ["inline"] }
 libc = "0.2.147"
 quinn = "0.10.2"
-rustls = "0.21.6"
+rustls = { version = "0.21.6", features = ["dangerous_configuration"] }
 rustls-pemfile = "1.0.3"
 serde = { version = "1.0.186", features = ["derive"] }
+webpki = { version = "0.22.0", features = ["std"] }
 
 [dependencies.tokio]
 version = "1.32.0"

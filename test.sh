@@ -1,14 +1,16 @@
 
-./gen-certs.sh ddpwuxrmp.uk
+./gen-certs.sh ddpwuxrmp.uk rehdhssj.cn
 
-# create bad certs
-mkdir -p certs/bad
-touch certs/bad/bad.crt
-touch certs/bad/bad.key
+# create empty certs
+mkdir -p certs/empty/
+touch certs/empty/empty.crt
+touch certs/empty/empty.key
 
 # create concatenated cert
 cat ./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.crt > ./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.pem
 cat ./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.key >>  ./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.pem
 
-cargo test
+# rust tests
+cargo test -- --nocapture
+
 rm -rf certs

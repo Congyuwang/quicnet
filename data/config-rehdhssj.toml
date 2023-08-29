@@ -1,0 +1,4 @@
+ca = "./certs/RootCA.pem"
+certs = "./certs/rehdhssj.cn/rehdhssj.cn.crt"
+key = "./certs/rehdhssj.cn/rehdhssj.cn.key"
+addr = "127.0.0.1:12346"
