@@ -13,4 +13,4 @@ cat ./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.key >>  ./certs/ddpwuxrmp.uk/ddpwuxrmp.uk.
 # rust tests
 cargo test -- --nocapture
 
-# rm -rf certs
+rm -rf certs

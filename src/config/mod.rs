@@ -49,28 +49,17 @@ mod test_config {
     const CONFIG_A: &str = "data/config-ddpwuxrmp.toml";
     const CONFIG_B: &str = "data/config-rehdhssj.toml";
 
-    fn domain_list() -> Vec<DnsName> {
+    fn all_domains() -> Vec<DnsName> {
         vec![
             DnsName::from(webpki::DnsNameRef::try_from_ascii_str(NAME_A).unwrap()),
             DnsName::from(webpki::DnsNameRef::try_from_ascii_str(NAME_B).unwrap()),
         ]
     }
 
-    fn make_server(config_file: &str) -> (ServerConfig, quinn::Endpoint) {
-        let server_conf = ServerConfig::load(config_file).expect("failed to load server config");
-        let (server_config, client_config) =
-            quic::default_config(&server_conf, Some(domain_list()))
-                .expect("failed to build server config");
-        let mut server =
-            quinn::Endpoint::server(server_config, server_conf.addr).expect("init server failed");
-        server.set_default_client_config(client_config);
-        (server_conf, server)
-    }
-
     #[tokio::test]
     async fn test_config() {
-        let (conf_a, server_a) = make_server(CONFIG_A);
-        let (conf_b, server_b) = make_server(CONFIG_B);
+        let (conf_a, server_a) = make_server(CONFIG_A, Some(all_domains()));
+        let (conf_b, server_b) = make_server(CONFIG_B, Some(all_domains()));
         let accept = tokio::spawn(async move {
             let conn = server_b
                 .accept()
@@ -98,15 +87,28 @@ mod test_config {
         assert_eq!(name_b, NAME_B);
     }
 
-    /// helper function
+    // helper functions
+
+    fn make_server(
+        config_file: &str,
+        whitelist: Option<Vec<DnsName>>,
+    ) -> (ServerConfig, quinn::Endpoint) {
+        let server_conf = ServerConfig::load(config_file).expect("failed to load server config");
+        let (server_config, client_config) =
+            quic::default_config(&server_conf, whitelist).expect("failed to build server config");
+        let mut server =
+            quinn::Endpoint::server(server_config, server_conf.addr).expect("init server failed");
+        server.set_default_client_config(client_config);
+        (server_conf, server)
+    }
+
     fn get_addr_name(conn: &Connection) -> (SocketAddr, String) {
         let addr = conn.remote_address();
         let identity = conn.peer_identity().expect("failed to get certificate");
-        println!("{:?}", identity);
         let cert = identity
             .downcast_ref::<Vec<Certificate>>()
             .expect("failed to cast to certificate");
-        let domains = domain_list();
+        let domains = all_domains();
         let mut matched = match_certs_domain(&cert, &domains).expect("no matching domain");
         assert_eq!(matched.len(), 1);
         (
