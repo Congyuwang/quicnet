@@ -21,18 +21,32 @@ pub fn load_certificates<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<rustls:
 /// (i.e. the private key is appended to the certificate file).
 pub fn load_private_key<P: AsRef<Path>>(path: P) -> std::io::Result<rustls::PrivateKey> {
     let mut reader = BufReader::new(File::open(&path)?);
-    loop {
-        // if read_one returns `None`, no suitable private key is found
-        let item = rustls_pemfile::read_one(&mut reader)?.ok_or(std::io::Error::new(
-            std::io::ErrorKind::Other,
+    let mut items = rustls_pemfile::read_all(&mut reader)?
+        .into_iter()
+        .filter_map(|item| {
+            if let RSAKey(key) | PKCS8Key(key) | ECKey(key) = item {
+                Some(rustls::PrivateKey(key))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+    match items.len() {
+        0 => Err(std::io::Error::new(
+            ErrorKind::InvalidInput,
             format!(
                 "no private key found in file (requires RSA, EC, or PKCS): {}",
                 path.as_ref().display()
             ),
-        ))?;
-        if let RSAKey(key) | PKCS8Key(key) | ECKey(key) = item {
-            break Ok(rustls::PrivateKey(key));
-        }
+        )),
+        1 => Ok(rustls::PrivateKey(items.remove(0).0)),
+        _ => Err(std::io::Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "multiple private keys found in file: {}",
+                path.as_ref().display()
+            ),
+        )),
     }
 }
 
