@@ -1,5 +1,5 @@
-use rustls::server::AllowAnyAuthenticatedClient;
-use rustls::{Certificate, ClientConfig, RootCertStore, ServerConfig};
+use super::client_auth::AllowWhitelistAuthenticatedClient;
+use rustls::{ClientConfig, RootCertStore, ServerConfig};
 use rustls_pemfile::Item::{ECKey, PKCS8Key, RSAKey};
 use std::fs::File;
 use std::io::{BufReader, ErrorKind};
@@ -53,35 +53,28 @@ pub fn load_private_key<P: AsRef<Path>>(path: P) -> std::io::Result<rustls::Priv
 /// Build a `rustls::ServerConfig` struct with client Auth.
 pub fn build_crypto(
     ca: Vec<rustls::Certificate>,
+    whitelist: Option<Vec<webpki::DnsName>>,
     certs: Vec<rustls::Certificate>,
     key: rustls::PrivateKey,
 ) -> std::io::Result<(ServerConfig, ClientConfig)> {
     let root_store = build_root_store(&ca)?;
-    let server_config = build_server_config(root_store.clone(), certs.clone(), key.clone())?;
+    let server_config = build_server_config(ca, whitelist, certs.clone(), key.clone())?;
     let client_config = build_client_config(root_store, certs, key)?;
     Ok((server_config, client_config))
 }
 
-/// Use WebPKI X.509 Certificate Validation to obtain domain name
-/// from certificate.
-pub fn try_parse_cert(cert: &Certificate) -> std::io::Result<webpki::EndEntityCert> {
-    webpki::EndEntityCert::try_from(cert.0.as_slice()).map_err(|e| {
-        std::io::Error::new(
-            ErrorKind::InvalidInput,
-            format!("cannot parse certificate: {e}"),
-        )
-    })
-}
-
 /// config for server
 fn build_server_config(
-    root_store: RootCertStore,
+    ca: Vec<rustls::Certificate>,
+    whitelist: Option<Vec<webpki::DnsName>>,
     certs: Vec<rustls::Certificate>,
     key: rustls::PrivateKey,
 ) -> std::io::Result<rustls::ServerConfig> {
+    let verifier = AllowWhitelistAuthenticatedClient::new(ca, whitelist)
+        .map_err(|e| std::io::Error::new(ErrorKind::Other, format!("failed to parse CA: {e}")))?;
     rustls::ServerConfig::builder()
         .with_safe_defaults()
-        .with_client_cert_verifier(Arc::new(AllowAnyAuthenticatedClient::new(root_store)))
+        .with_client_cert_verifier(Arc::new(verifier))
         .with_single_cert(certs, key)
         .map_err(|e| {
             std::io::Error::new(
@@ -138,7 +131,7 @@ mod tls_tests {
         let ca = load_certificates(CA_PATH).expect("failed to load ca");
         let certs = load_certificates(TEST_CRT).expect("failed to load certs");
         let key = load_private_key(TEST_KEY).expect("failed to key");
-        build_crypto(ca, certs, key).expect("failed to build server config");
+        build_crypto(ca, None, certs, key).expect("failed to build server config");
     }
 
     #[test]
