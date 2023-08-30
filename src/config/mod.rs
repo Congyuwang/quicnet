@@ -1,7 +1,9 @@
 pub mod client_auth;
+pub mod domain_name;
 pub mod quic;
 pub mod tls;
 
+use self::domain_name::DomainName;
 use serde::Deserialize;
 use std::{net::SocketAddr, path::PathBuf};
 
@@ -11,6 +13,7 @@ pub struct ServerConfig {
     pub certs: PathBuf,
     pub key: PathBuf,
     pub addr: SocketAddr,
+    pub whitelist: Option<Vec<DomainName>>,
 }
 
 impl ServerConfig {
@@ -58,8 +61,8 @@ mod test_config {
 
     #[tokio::test]
     async fn test_config() {
-        let (conf_a, server_a) = make_server(CONFIG_A, Some(all_domains()));
-        let (conf_b, server_b) = make_server(CONFIG_B, Some(all_domains()));
+        let (conf_a, server_a) = make_server(CONFIG_A);
+        let (conf_b, server_b) = make_server(CONFIG_B);
         let accept = tokio::spawn(async move {
             let conn = server_b
                 .accept()
@@ -89,13 +92,10 @@ mod test_config {
 
     // helper functions
 
-    fn make_server(
-        config_file: &str,
-        whitelist: Option<Vec<DnsName>>,
-    ) -> (ServerConfig, quinn::Endpoint) {
+    fn make_server(config_file: &str) -> (ServerConfig, quinn::Endpoint) {
         let server_conf = ServerConfig::load(config_file).expect("failed to load server config");
         let (server_config, client_config) =
-            quic::default_config(&server_conf, whitelist).expect("failed to build server config");
+            quic::default_config(&server_conf).expect("failed to build server config");
         let mut server =
             quinn::Endpoint::server(server_config, server_conf.addr).expect("init server failed");
         server.set_default_client_config(client_config);
