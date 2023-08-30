@@ -1,5 +1,5 @@
 use super::{
-    tls::{build_crypto, load_certificates, load_private_key},
+    tls::{build_crypto, load_certificates, load_private_key, load_whitelist},
     ServerConfig,
 };
 use std::{sync::Arc, time::Duration};
@@ -9,11 +9,11 @@ pub const KEEP_ALIVE_INTERVAL: Option<Duration> = Some(Duration::from_secs(15));
 /// Create a default configuation for the QUIC server.
 pub(crate) fn default_config(
     config: &ServerConfig,
-    whitelist: Option<Vec<webpki::DnsName>>,
 ) -> std::io::Result<(quinn::ServerConfig, quinn::ClientConfig)> {
     let ca = load_certificates(&config.ca)?;
     let certs = load_certificates(&config.certs)?;
     let key = load_private_key(&config.key)?;
+    let whitelist = load_whitelist(&config.whitelist);
     let (server_crypto, client_crypto) = build_crypto(ca, whitelist, certs, key)?;
     let transport_config = default_transport_config();
     let mut server_config = quinn::ServerConfig::with_crypto(Arc::new(server_crypto));

@@ -1,4 +1,5 @@
 use super::client_auth::AllowWhitelistAuthenticatedClient;
+use super::domain_name::DomainName;
 use rustls::{ClientConfig, RootCertStore, ServerConfig};
 use rustls_pemfile::Item::{ECKey, PKCS8Key, RSAKey};
 use std::fs::File;
@@ -7,7 +8,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 /// Load certificates.
-pub fn load_certificates<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<rustls::Certificate>> {
+pub(crate) fn load_certificates<P: AsRef<Path>>(
+    path: P,
+) -> std::io::Result<Vec<rustls::Certificate>> {
     let mut reader = BufReader::new(File::open(path)?);
     Ok(rustls_pemfile::certs(&mut reader)?
         .iter()
@@ -19,7 +22,7 @@ pub fn load_certificates<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<rustls:
 ///
 /// This function also supports concatenated private key format
 /// (i.e. the private key is appended to the certificate file).
-pub fn load_private_key<P: AsRef<Path>>(path: P) -> std::io::Result<rustls::PrivateKey> {
+pub(crate) fn load_private_key<P: AsRef<Path>>(path: P) -> std::io::Result<rustls::PrivateKey> {
     let mut reader = BufReader::new(File::open(&path)?);
     let mut items = rustls_pemfile::read_all(&mut reader)?
         .into_iter()
@@ -48,6 +51,13 @@ pub fn load_private_key<P: AsRef<Path>>(path: P) -> std::io::Result<rustls::Priv
             ),
         )),
     }
+}
+
+/// load domain whitelist from config
+pub(crate) fn load_whitelist(whitelist: &Option<Vec<DomainName>>) -> Option<Vec<webpki::DnsName>> {
+    whitelist
+        .clone()
+        .map(|v| v.into_iter().map(|d| d.0).collect())
 }
 
 /// Build a `rustls::ServerConfig` struct with client Auth.
