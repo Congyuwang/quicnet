@@ -24,7 +24,7 @@ static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
 
 /// A `ClientCertVerifier` that will ensure that every client provides a trusted
 /// certificate, check the the certificate is within a white list of domain names.
-pub struct AllowWhitelistAuthenticatedClient {
+pub(crate) struct AllowWhitelistAuthenticatedClient {
     roots: Vec<Certificate>,
     subjects: Vec<DistinguishedName>,
     whitelist: Option<Vec<webpki::DnsName>>,

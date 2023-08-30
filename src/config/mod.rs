@@ -6,7 +6,7 @@ use serde::Deserialize;
 use std::{net::SocketAddr, path::PathBuf};
 
 #[derive(Deserialize)]
-pub struct ServerConfig {
+pub(crate) struct ServerConfig {
     pub ca: PathBuf,
     pub certs: PathBuf,
     pub key: PathBuf,

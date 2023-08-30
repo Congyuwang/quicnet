@@ -7,7 +7,7 @@ use std::{sync::Arc, time::Duration};
 pub const KEEP_ALIVE_INTERVAL: Option<Duration> = Some(Duration::from_secs(15));
 
 /// Create a default configuation for the QUIC server.
-pub fn default_config(
+pub(crate) fn default_config(
     config: &ServerConfig,
     whitelist: Option<Vec<webpki::DnsName>>,
 ) -> std::io::Result<(quinn::ServerConfig, quinn::ClientConfig)> {
