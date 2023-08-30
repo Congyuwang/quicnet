@@ -61,7 +61,7 @@ pub(crate) fn load_whitelist(whitelist: &Option<Vec<DomainName>>) -> Option<Vec<
 }
 
 /// Build a `rustls::ServerConfig` struct with client Auth.
-pub fn build_crypto(
+pub(crate) fn build_crypto(
     ca: Vec<rustls::Certificate>,
     whitelist: Option<Vec<webpki::DnsName>>,
     certs: Vec<rustls::Certificate>,
@@ -74,7 +74,7 @@ pub fn build_crypto(
 }
 
 /// Match domain names of provided certs.
-pub fn match_certs_domain<'a>(
+pub(crate) fn match_certs_domain<'a>(
     certs: &[rustls::Certificate],
     domains: &'a [webpki::DnsName],
 ) -> std::io::Result<Vec<webpki::DnsNameRef<'a>>> {
